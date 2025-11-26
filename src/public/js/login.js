@@ -80,8 +80,11 @@ loginForm.addEventListener("submit", async (e) => {
       const errorMessage = errorData.error;
       throw new Error(`Sign Up API failed with status: ${errorMessage}`);
     }
-    const result = respone.json();
+    const result = await respone.json();
+    const accessToken = result.accessToken;
     console.log("[Sign in] Command acknowledge", result);
+    localStorage.setItem("userAccessToken", accessToken);
+    window.location.href = "/temp";
   } catch (error) {
     console.error(`[SIGN UP ERROR] Failed to send control command:`, error);
     displayError(error);
@@ -108,7 +111,7 @@ signupForm.addEventListener("submit", (e) => {
   alert(`Signup attempted for ${username}. (Check console for details)`);
   // --- End BACK-END Logic Placeholder ---
 
-  // Optional: Switch back to login form after successful signup (Giả lập chuyển về Login sau khi Đăng ký thành công)
+  // Optional: Switch back to login form after successful signup
   // showLogin();
 });
 

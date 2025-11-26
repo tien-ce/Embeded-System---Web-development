@@ -19,14 +19,22 @@ async function sendControlCommand(
     attributeKey: attributeKey,
     value: value,
   };
+  console.log(`[CONTROL] Sending ${attributeKey}: ${value} to server...`);
+  const userAccessToken = localStorage.getItem("userAccessToken");
 
+  if (!userAccessToken || userAccessToken === "undefined") {
+    alert("The session has expired. Please log in again");
+    window.location.href = "/login";
+    return;
+  }
+  console.log(">>> User token", userAccessToken);
+  console.log(">>> Compare undefine", userAccessToken === undefined);
   try {
-    console.log(`[CONTROL] Sending ${attributeKey}: ${value} to server...`);
-
     const response = await fetch(SET_CONTROL_API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${userAccessToken}`,
       },
       body: JSON.stringify(payload),
     });
@@ -140,8 +148,18 @@ function updateLedState() {
 // Fetches the latest Device State form Node.js proxy API
 async function fetchLatestDeviceState() {
   console.log("Fetching device state from cline-side");
+  const userAccessToken = localStorage.getItem("userAccessToken");
+  if (!userAccessToken) {
+    alert("The session has expired. Please log in again");
+    window.location.href = "/login";
+    return;
+  }
   try {
-    const respone = await fetch(GET_CONTROL_API_RUL);
+    const respone = await fetch(GET_CONTROL_API_RUL, {
+      headers: {
+        Authorization: `Bearer ${userAccessToken}`,
+      },
+    });
     if (!respone.ok) {
       throw new Error(`Proxy Request failed: ${respone.status}`);
     }

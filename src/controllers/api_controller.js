@@ -95,8 +95,15 @@ const getControlDevice = async (req, res) => {
  */
 const setControlDevice = async (req, res) => {
   const data = req.body;
-  console.log(">>> Body", data);
+  const header = req.headers;
+  console.log(">>> Header", header);
+  const authHeader = header["authorization"];
 
+  console.log(">>> Body", data);
+  let userAccessToken;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    userAccessToken = authHeader.split(" ")[1]; // Get token
+  }
   // 1. Validiation
   const attributeKey = data.attributeKey;
   const value = data.value;
@@ -105,17 +112,23 @@ const setControlDevice = async (req, res) => {
     ">>> Test fetch device control: AttributeKey",
     attributeKey,
     "Value",
-    value
+    value,
+    "AccessToken",
+    userAccessToken
   );
 
-  if (!attributeKey || value === undefined) {
+  if (!attributeKey || value === undefined || attributeKey === undefined) {
     console.error("CONTROL ERROR: Missing key or value");
     return res.status(400).json({ error: "Missing attributeKey or value" });
   }
 
   try {
     // 2. Dispatch to Service
-    const success = await updateControlDevice(attributeKey, value);
+    const success = await updateControlDevice(
+      userAccessToken,
+      attributeKey,
+      value
+    );
 
     if (success) {
       // 3. Success Response

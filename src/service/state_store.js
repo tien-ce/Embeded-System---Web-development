@@ -90,9 +90,9 @@ const checkSignIn = async (email, password) => {
     if (user.length < 1) {
       status = "ERROR";
       message = "Email is not registed, please sign up";
-    } else if (user["0"].password === password) {
+    } else if (user["0"].password_hash === password) {
       status = "OK";
-      message = user["0"].accessToken;
+      message = user["0"].user_access_token;
     } else {
       status = "ERROR";
       message = "Password is incorrect";
