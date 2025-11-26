@@ -1,0 +1,102 @@
+/* Global Variables for Colors */
+:root {
+    --main-bg-color: #121212;      /* Very dark grey background */
+    --card-bg-color: #1e1e1e;      /* Slightly lighter for cards */
+    --primary-color: #009dff;      /* Bright blue for highlights */
+    --secondary-text: #b0b3b8;     /* Grey text */
+    --text-white: #e4e6eb;         /* Main text */
+}
+.chart-container {
+    height: 800px; 
+    position: relative; 
+}
+#sidebar-wrapper {
+    min-height: 100vh; 
+    width: 15rem;
+    margin-left: 0; 
+    transition: margin 0.25s ease-out;
+    background-color: #2a2a2a !important; 
+    border-right: 1px solid #444 !important;
+}
+/* Body and Wrapper Setup */
+body {
+    background-color: var(--main-bg-color);
+    color: var(--text-white);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+}
+
+#wrapper {
+    overflow-x: hidden;
+}
+
+/* Sidebar Styling */
+#sidebar-wrapper {
+    min-height: 100vh;
+    margin-left: -15rem;
+    transition: margin 0.25s ease-out;
+    background-color: var(--card-bg-color) !important;
+    width: 15rem;
+}
+
+#sidebar-wrapper .sidebar-heading {
+    padding: 0.875rem 1.25rem;
+    font-size: 1.2rem;
+    color: var(--primary-color);
+}
+
+#sidebar-wrapper .list-group {
+    width: 15rem;
+}
+
+#page-content-wrapper {
+    width: 100%;
+    background-color: var(--main-bg-color);
+}
+
+/* Sidebar Toggle State */
+#wrapper.toggled #sidebar-wrapper {
+    margin-left: 0;
+}
+
+/* Custom Card Styling (Glassy/Dark effect) */
+.bg-dark-card {
+    background-color: var(--card-bg-color);
+}
+
+.custom-card {
+    border: 1px solid #333;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.custom-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
+    border-color: var(--primary-color);
+}
+
+/* Text Colors */
+.primary-text {
+    color: var(--primary-color);
+}
+
+.second-text {
+    color: var(--secondary-text);
+}
+
+.list-group-item {
+    border: none;
+    padding: 20px 30px;
+}
+
+.list-group-item.active {
+    background-color: transparent;
+    color: var(--primary-color);
+    font-weight: bold;
+    border-left: 4px solid var(--primary-color);
+}
+
+/* Navbar Toggle Button */
+#menu-toggle {
+    cursor: pointer;
+}

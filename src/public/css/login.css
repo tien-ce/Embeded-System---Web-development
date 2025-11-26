@@ -1,0 +1,157 @@
+/* Thiết lập cơ bản và Font */
+body {
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  /* Sử dụng gradient làm nền trang */
+  background: linear-gradient(135deg, #74ebd5, #9face6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  color: #333;
+}
+
+.container {
+  width: 90%;
+  max-width: 850px;
+  padding: 0;
+}
+
+/* Kiểu dáng Form Box mới */
+.form-box {
+  background: rgba(255, 255, 255, 0.95); /* Màu nền trắng hơi trong suốt */
+  padding: 40px;
+  border-radius: 15px; /* Góc bo tròn lớn hơn */
+  /* Đổ bóng sâu và tinh tế */
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2), 0 0 10px rgba(0, 0, 0, 0.05);
+  transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.form-box h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+/* Nhóm Input */
+.input-group {
+  margin-bottom: 25px;
+  position: relative;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  color: #555;
+}
+
+.input-group input[type="text"],
+.input-group input[type="email"],
+.input-group input[type="password"] {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px; /* Góc bo tròn đẹp hơn */
+  box-sizing: border-box;
+  font-size: 16px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+/* Hiệu ứng focus */
+.input-group input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+  outline: none;
+}
+
+/* Nút Submit */
+.submit-btn {
+  width: 100%;
+  padding: 12px;
+  /* Sử dụng gradient cho nút */
+  background: linear-gradient(45deg, #007bff, #0056b3);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: bold;
+  margin-top: 15px;
+  box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.submit-btn:hover {
+  /* Đổi gradient khi hover */
+  background: linear-gradient(45deg, #0056b3, #004085);
+  box-shadow: 0 6px 15px rgba(0, 123, 255, 0.4);
+}
+
+/* Phần chuyển đổi form */
+.switch-text {
+  text-align: center;
+  margin-top: 25px;
+  font-size: 15px;
+  color: #666;
+}
+
+.switch-text a {
+  color: #ff6b6b; /* Màu nổi bật cho link */
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.2s;
+}
+
+.switch-text a:hover {
+  color: #e63946;
+  text-decoration: underline;
+}
+
+/* Class ẩn */
+.hidden {
+  display: none;
+}
+/* Kiểu dáng cho thông báo lỗi */
+.error-message {
+  background-color: #ffe0e0; /* Màu nền đỏ nhạt */
+  color: #cc0000; /* Màu chữ đỏ đậm */
+  border: 1px solid #ff9999;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px; /* Tạo khoảng cách với form */
+  text-align: center;
+  font-weight: 500;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* Kiểu dáng cho thông báo lỗi khi bị ẩn */
+.hidden {
+  display: none;
+  /* Dùng display: none thay vì opacity để loại bỏ khỏi luồng tài liệu */
+}
+.video {
+  position: fixed; /* 1. Đặt vị trí cố định, tách khỏi luồng tài liệu */
+  top: 0; /* 2. Bắt đầu từ góc trên bên trái */
+  left: 0;
+  width: 100vw; /* 3. Chiếm 100% chiều rộng viewport */
+  height: 100vh; /* 4. Chiếm 100% chiều cao viewport */
+  overflow: hidden; /* 5. Đảm bảo không có thanh cuộn nếu video quá lớn */
+  z-index: -1; /* 6. Đặt video xuống lớp thấp nhất (đằng sau nội dung form) */
+}
+.video video {
+  min-width: 100%; /* Đảm bảo video luôn rộng hơn 100% của container */
+  min-height: 100%; /* Đảm bảo video luôn cao hơn 100% của container */
+
+  /* Center the video (Căn giữa video) */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  object-fit: cover;
+}

@@ -1,0 +1,118 @@
+/*
+ * style.css
+ * Custom CSS for the ESP32 IoT Dashboard
+ */
+
+/* ======== GLOBAL & THEME ======== */
+body {
+  /* Use a dark background color */
+  background-color: #1a1a1a;
+  color: #f0f0f0;
+
+  /* Add padding to the top to offset the fixed navbar */
+  padding-top: 70px;
+}
+
+.section-title {
+  color: #e0e0e0;
+  margin-top: 20px;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #444;
+}
+
+.section-row {
+  margin-bottom: 25px;
+}
+
+/* ======== CARD STYLING ======== */
+
+.card {
+  /* Override Bootstrap card for dark mode */
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  color: #f0f0f0;
+  height: 100%; /* Make cards in a row the same height */
+}
+
+.card-title {
+  color: #ffffff;
+}
+
+.card-text {
+  color: #c0c0c0;
+}
+
+/* ======== SENSOR DATA CARD ======== */
+.data-card.card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.sensor-value-container {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #1a1a1a;
+  border-radius: 5px;
+}
+
+.sensor-value {
+  font-size: 3.5rem; /* Make the value prominent */
+  font-weight: bold;
+  color: #0d6efd; /* Bootstrap primary blue */
+}
+
+/* Specific sensor overrides */
+#sensor-1-value {
+  color: #fd7e14; /* Bootstrap orange */
+}
+#sensor-2-value {
+  color: #0dcaf0; /* Bootstrap cyan */
+}
+#status-value {
+  font-size: 2.5rem;
+  color: #dc3545; /* Bootstrap red (default to OFFLINE) */
+}
+
+.sensor-unit {
+  font-size: 1.5rem;
+  color: #c0c0c0;
+  margin-left: 10px;
+}
+
+/* ======== CONFIG FORM STYLING ======== */
+.form-label {
+  color: #e0e0e0;
+}
+
+.form-control {
+  background-color: #333;
+  border-color: #555;
+  color: #f0f0f0;
+}
+
+.form-control:focus {
+  background-color: #444;
+  border-color: #0d6efd;
+  color: #f0f0f0;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.form-control::placeholder {
+  color: #888;
+}
+
+.first-class {
+  color: green;
+  font-size: 40;
+}
+.second-class {
+  color: blue;
+}
+#secondId {
+  color: red;
+}
