@@ -1,151 +1,108 @@
 // mqtt_client.js
 
 const mqtt = require("mqtt");
-const fetch = require("node-fetch");
+const pool = require("../config/database");
 require("dotenv").config();
 // Import State Store (This path assumes state_store.js is in the same directory)
 const stateStore = require("./state_store");
 // 1. THINGSBOARD CONNECTION CONFIGURATION
 const THINGSBOARD_HOST = process.env.THINGSBOARD_HOST;
-const DEVICE_ACCESS_TOKEN = process.env.DEVICE_ACCES_TOKEN;
-const CLIENT_KEYS_TO_FETCH = "fanSpeed,ledState,timeInterval";
-const SHARED_KEYS_TO_FETCH = "temperature,humidity,no2,pm10,pm25";
 // Topic used to receive Attribute Updates or Control Commands from the server/dashboard
+const DEVICE_ACCESS_TOKENS_LIST = process.env.DEVICE_ACCESS_TOKENS_LIST || "";
+const TOKENS_ARRAY = DEVICE_ACCESS_TOKENS_LIST.split(",");
 const ATTRIBUTES_TOPIC = "v1/devices/me/attributes";
-
-const options = {
-  // ThingsBoard uses the Access Token as the username for authentication
-  username: DEVICE_ACCESS_TOKEN,
-  // Password is usually left empty for basic token authentication
-};
+const clients = [];
 /**
- * Executes an HTTP GET request to ThingsBoard to fetch initial shared/client attributes
- * before the MQTT subscription starts.
+ * Sets up event handlers and subscriptions for a single MQTT client.
+ * @param {object} clientInstance - The MQTT client instance.
+ * @param {string} token - The access token used for this connection.
  */
-async function fetchInitialAttributes() {
-  console.log("[HTTP] Requesting initial attributes...");
-
-  // Construct the URL using the defined Access Token and keys
-  const url = `https://${THINGSBOARD_HOST}/api/v1/${DEVICE_ACCESS_TOKEN}/attributes?clientKeys=${CLIENT_KEYS_TO_FETCH}&sharedKeys=${SHARED_KEYS_TO_FETCH}`;
-
-  try {
-    // Execute the GET request using fetch
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      // Throw error for bad HTTP status (4xx, 5xx)
-      const errorText = await response.text();
-      throw new Error(`HTTP Status ${response.status}: ${errorText}`);
-    }
-
-    const data = await response.json();
-
-    console.log("[HTTP] Initial attributes received.");
-
-    // Process and save the initial state to stateStore
-    const initialState = {};
-    console.log(">>> Raw data received from HTTP:", data);
-    // Merge client attributes
-    if (data.client && typeof data.client === "object") {
-      Object.entries(data.client).forEach(([key, value]) => {
-        initialState[key] = value.toString();
-      });
-    }
-
-    // Merge shared attributes
-    const initialData = {};
-
-    if (data.shared && typeof data.shared === "object") {
-      Object.entries(data.shared).forEach(([key, value]) => {
-        initialData[key] = value.toString();
-      });
-    }
-
-    // Set initial status and timestamp
-    initialData.status = "ONLINE";
-    initialData.lastUpdated = new Date().getTime();
-    console.log(">>> Device state initialize ", initialState);
-    stateStore.updateData(initialData);
-    stateStore.updateDeviceState(initialState);
-    console.log("[State] Initial state populated successfully.");
-  } catch (error) {
-    console.error(
-      "[HTTP] Failed to fetch initial attributes (thuộc tính khởi tạo). Check Access Token and Host URL.",
-      error.message
+function setupClientHandlers(clientInstance, token) {
+  clientInstance.on("connect", function () {
+    console.log(
+      `[MQTT] Client for token ${token.substring(0, 5)}... connected.`
     );
-  }
-}
-// 1. Fetch data for first time
-fetchInitialAttributes();
-// 2. CONNECT TO THE MQTT BROKER
-console.log(`[MQTT] Connecting to broker: ${THINGSBOARD_HOST}`);
-const client = mqtt.connect(`mqtt://${THINGSBOARD_HOST}`, options);
+    clientInstance.subscribe(ATTRIBUTES_TOPIC, function (err) {
+      if (!err) {
+        console.log(
+          `[MQTT] Subscribed attributes for ${token.substring(0, 5)}...`
+        );
+      } else {
+        console.error(
+          `[MQTT] Subscription error for ${token.substring(0, 5)}...:`,
+          err
+        );
+      }
+    });
+  });
 
-// Handler when the client successfully connects
-client.on("connect", function () {
-  console.log("[MQTT] Successfully connected.");
-  // Subscribe to both the Telemetry (if listening for other devices) and Attributes topics
-  client.subscribe(ATTRIBUTES_TOPIC, function (err) {
-    if (!err) {
-      console.log(`[MQTT] Subscribed to attributes topics.`);
-      const REQUEST_PAYLOAD = JSON.stringify({
-        First_connect: "temperature,humidity,Co2,PM10,PM20",
-      });
-      // For first time
-      client.publish(ATTRIBUTES_TOPIC, REQUEST_PAYLOAD, function (err) {
-        if (err) {
-          console.error("[MQTT] Publish request error:", err);
-        } else {
-          console.log("[MQTT] Successfully requested current attributes.");
-        }
-      });
-    } else {
-      console.error("[MQTT] Subscription error:", err);
+  clientInstance.on("message", async function (topic, message) {
+    const payload = await message.toString();
+    console.log(
+      `>>>> Test payload from core IoT (${token.substring(0, 5)}...):`,
+      payload
+    );
+    try {
+      const data = JSON.parse(payload);
+      connection = await pool.getConnection();
+      //Asynchronously query the database to find the userId associated with the token
+      const [rows] = await connection.query(
+        "SELECT id FROM users WHERE user_access_token = ?",
+        [token]
+      );
+
+      if (rows.length === 0) {
+        // If the token is present but invalid/expired (not found in DB)
+        console.error(
+          `[MQTT] ERROR: Invalid access token '${token.substring(
+            0,
+            5
+          )}...' received.`
+        );
+        return;
+      }
+
+      // 4. Attach the found userId to the request object
+      // This is the key step for internal server communication
+      const userId = rows[0].id;
+      stateStore.updateData(data, userId);
+    } catch (e) {
+      console.error(
+        `[MQTT] Error parsing payload for ${token.substring(0, 5)}...:`,
+        e
+      );
     }
   });
-});
+  clientInstance.on("close", function () {
+    console.log(`[MQTT] Close connection ${token.substring(0, 5)}...:`);
+  });
+  clientInstance.on("error", function (err) {
+    console.error(
+      `MQTT connection error for ${token.substring(0, 5)}...:`,
+      err
+    );
+  });
+}
 
-// Handler for incoming messages
-client.on("message", function (topic, message) {
-  const payload = message.toString();
-  console.log(">>>> Test payload from core IoT", payload);
-  try {
-    const data = JSON.parse(payload);
+if (TOKENS_ARRAY.length === 0 || TOKENS_ARRAY[0].length === 0) {
+  console.warn(
+    "[MQTT WARNING] No device access tokens found. Skipping MQTT connections."
+  );
+} else {
+  console.log(">>> Token Array", TOKENS_ARRAY, "lenght", TOKENS_ARRAY.length);
+  TOKENS_ARRAY.forEach((token) => {
+    token = token.trim(); // Remove the redudant spacace
+    if (token) {
+      const options = {
+        username: token,
+      };
+      console.log(
+        `[MQTT] Connecting client for token: ${token.substring(0, 5)}...`
+      );
+      const newClient = mqtt.connect(`mqtt://${THINGSBOARD_HOST}`, options);
+      setupClientHandlers(newClient, token);
 
-    // --- CORE LOGIC: Update State ---
-    if (topic === ATTRIBUTES_TOPIC) {
-      // Received Attribute updates or control commandsN
-      console.log(`[MQTT] Received Control Command (Attribute Update):`, data);
-      // Udpate lasted receive time
-      data.lastUpdated = new Date().getTime();
-      data.status = "ONLINE";
-      // Add logic here to publish response or control the ESP32
-      stateStore.updateData(data);
-    } else {
-      console.log(`[MQTT] Unhandled topic ${topic}: ${payload}`);
+      clients.push(newClient);
     }
-  } catch (e) {
-    console.error("[MQTT] Error parsing MQTT payload:", e);
-  }
-});
-
-// Handler for connection errors
-client.on("error", function (err) {
-  console.error("MQTT connection error:", err);
-  client.end();
-});
-
-// Handler for connection closed
-client.on("close", function () {
-  console.log("MQTT connection closed.");
-});
-
-// Prevent script from exiting immediately (used for graceful shutdown)
-process.on("SIGINT", () => {
-  console.log("\nClosing MQTT connection...");
-  client.end();
-  process.exit();
-});
-
-// IMPORTANT: Export the client instance so server.js can run it
-module.exports = client;
+  });
+}

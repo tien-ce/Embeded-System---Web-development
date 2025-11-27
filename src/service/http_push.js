@@ -1,7 +1,6 @@
 // Service Layer: control_service.js
 
 const fetch = require("node-fetch");
-const CONTROL_TOPIC = "v1/devices/me/attributes";
 require("dotenv").config();
 const THINGSBOARD_HOST = process.env.THINGSBOARD_HOST;
 /**
@@ -35,6 +34,40 @@ const updateControlDevice = (userAccessToken, key, value) => {
   });
 };
 
+const getLatestControlDevice = async (userAccessToken) => {
+  const CLIENT_KEYS_TO_FETCH = "fanSpeed,ledState,timeInterval";
+
+  console.log("[HTTP] Requesting initial attributes...");
+
+  // Construct the URL using the defined Access Token and keys
+  const url = `https://${THINGSBOARD_HOST}/api/v1/${userAccessToken}/attributes?clientKeys=${CLIENT_KEYS_TO_FETCH}`;
+
+  try {
+    // Execute the GET request using fetch
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+    const data = await response.json();
+
+    console.log("[HTTP] Initial attributes received.");
+
+    // Process and save the initial state to stateStore
+    const initialState = {};
+    console.log(">>> Raw data received from HTTP:", data);
+    // Merge client attributes
+    if (data.client && typeof data.client === "object") {
+      Object.entries(data.client).forEach(([key, value]) => {
+        initialState[key] = value.toString();
+      });
+    }
+    return initialState;
+  } catch (error) {
+    console.error("Error when update device state", error);
+    throw error;
+  }
+};
 module.exports = {
   updateControlDevice,
+  getLatestControlDevice,
 };
