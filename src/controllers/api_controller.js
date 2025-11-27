@@ -3,7 +3,10 @@
 // Import the State Store, which acts as the in-memory Model layer
 // storing the latest sensor data received via MQTT.
 const stateStore = require("../service/state_store");
-const { updateControlDevice } = require("../service/mqtt_push");
+const {
+  updateControlDevice,
+  getLatestControlDevice,
+} = require("../service/http_push");
 /**
  * Controller function to handle HTTP requests from the client-side JavaScript
  * (Dashboard) for the latest sensor data.
@@ -12,67 +15,13 @@ const { updateControlDevice } = require("../service/mqtt_push");
  * @param {object} res - The outgoing HTTP response object.
  */
 const getSensor1Data = async (req, res) => {
+  const userId = req.userId;
   // 1. Controller calls the State Store (Model) to retrieve the latest data.
-  const data = stateStore.getLatestData();
+  const data = await stateStore.getLatestData(userId);
   console.log(">>> Get data from client-side", data);
   // --- Data Validation and Formatting ---
-
-  // Check if the temperature data exists and is not the initial "N/A" placeholder.
-  const isTempValid =
-    data && data.temperature !== "N/A" && data.temperature !== null;
-
-  // Determine the temperature value to send back:
-  let tempValue;
-  if (isTempValid) {
-    // If valid, parse it as a float and format to 1 decimal place.
-    tempValue = parseFloat(data.temperature).toFixed(1);
-  } else {
-    // If data is missing or "N/A", return "NaN" as requested.
-    // The client-side JS can then display "NaN" or a custom error message.
-    tempValue = "NaN";
-  }
-
-  // Determine the humidity value to send back (similarly for other fields):
-  const isHumValid = data && data.humidity !== "N/A" && data.humidity !== null;
-  let humValue = isHumValid ? parseFloat(data.humidity).toFixed(1) : "NaN";
-
-  // Determine the Co2 value to send back (similarly for other fields):
-  const isCo2Valid = data && data.no2 !== "N/A" && data.no2 !== null;
-  let Co2 = isCo2Valid ? parseFloat(data.no2).toFixed(1) : "NaN";
-
-  // Determine the PM25 value to send back (similarly for other fields):
-  const isPM25Valid = data && data.pm25 !== "N/A" && data.pm25 !== null;
-  let PM25 = isPM25Valid ? parseFloat(data.pm25).toFixed(1) : "NaN";
-
-  // Determine the PM10 value to send back (similarly for other fields):
-  const isPM10Valid = data && data.pm10 !== "N/A" && data.pm10 !== null;
-  let PM10 = isPM10Valid ? parseFloat(data.pm10).toFixed(1) : "NaN";
-
   // 2. Controller sends the formatted JSON data back to the client.
-  res.json({
-    // Temperature response (Value or "NaN")
-    temperature: tempValue,
-
-    // Humidity response (Value or "NaN")
-    humidity: humValue,
-
-    // Co2
-    Co2: Co2,
-
-    // PM25
-    PM25: PM25,
-
-    // PM10
-    PM10: PM10,
-
-    // Last updated timestamp
-    lastUpdated: data.lastUpdated,
-
-    // Interval time
-    intervalTime: data.intervalTime,
-
-    status: data.status,
-  });
+  res.json(data);
 };
 
 /**
@@ -83,9 +32,27 @@ const getSensor1Data = async (req, res) => {
  * * @param {object} res - The outgoing HTTP response object.
  */
 const getControlDevice = async (req, res) => {
-  const data = stateStore.getLatestDeviceState();
-  console.log(">>> Get state from client-side", data);
-  res.json(data);
+  const data = req.body;
+  const header = req.headers;
+  console.log(">>> Header", header);
+  const authHeader = header["authorization"];
+
+  console.log(">>> Body", data);
+  let userAccessToken;
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    userAccessToken = authHeader.split(" ")[1]; // Get token
+  }
+  try {
+    const latestDeviceState = await getLatestControlDevice(userAccessToken);
+    console.log(">>> Get state from client-side", latestDeviceState);
+    console.log(">>> Get state from client-side", latestDeviceState);
+    res.json(latestDeviceState);
+  } catch (error) {
+    return res.status(500).json({
+      error: "Failed to fetch device state from external API.",
+      details: error.message,
+    });
+  }
 };
 
 /**
@@ -131,10 +98,6 @@ const setControlDevice = async (req, res) => {
     );
 
     if (success) {
-      // 3. Success Response
-      let updatedState = {};
-      updatedState[attributeKey] = value;
-      stateStore.updateDeviceState(updatedState);
       return res.status(200).json({
         message: "Control command successfully dispatched.",
         key: attributeKey,
