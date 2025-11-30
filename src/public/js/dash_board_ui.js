@@ -97,27 +97,52 @@ function updateFanSpeed() {
  * Function called when the Save Configuration button is clicked.
  * Handles the Interval Time input only.
  */
-function updateIntervalSettings() {
+function update_verification() {
   const intervalInput = document.getElementById("interval-time-input");
-
-  if (intervalInput) {
-    const newInterval = parseInt(intervalInput.value, 10);
-    const oldIntervanewFanSpeedl = intervalInput.dataset.oldValue || 10;
-
-    if (isNaN(newInterval) || newInterval < 1) {
-      alert("Please enter a valid positive number for Interval Time.");
-      return;
-    }
-
-    // Rollback function: Revert the input field value to the stored old value
-    const rollback = (el) => {
-      // Restore from the stored old value or default to 10
-      el.value = oldInterval;
-    };
-
-    // Send the new interval time (attributeKey: 'timeInterval')
-    sendControlCommand("timeInterval", newInterval, rollback, intervalInput);
+  const tempInput = document.getElementById("temp-threshold-input");
+  const humiInput = document.getElementById("humi-threshold-input");
+  const so2Input = document.getElementById("so2-threshold-input");
+  const pm10Input = document.getElementById("pm10-threshold-input");
+  const pm25Input = document.getElementById("pm25-threshold-input");
+  if (!intervalInput || !tempInput || !so2Input || !pm10Input || !pm25Input) {
+    console.error("One or more required input elements are missing.");
+    alert("Configuration fields could not be loaded.");
+    return;
   }
+  const newInterval = parseInt(intervalInput.value, 10);
+
+  // Thresholds
+  const newTempThreshold = parseFloat(tempInput.value);
+  const newHumiThreshold = parseFloat(humiInput.value);
+  const newSO2Threshold = parseFloat(so2Input.value);
+  const newPM10Threshold = parseFloat(pm10Input.value);
+  const newPM25Threshold = parseFloat(pm25Input.value);
+
+  const oldSettings = {
+    // Old value or defualt
+    timeInterval: intervalInput.dataset.oldValue || 10,
+    tempThreshold: tempInput.dataset.oldValue || 35,
+    humiThreshold: humiInput.dataset.oldValue || 10,
+    so2Threshold: so2Input.dataset.oldValue || 20,
+    pm10Threshold: pm10Input.dataset.oldValue || 50,
+    pm25Threshold: pm25Input.dataset.oldValue || 25,
+  };
+
+  // Rollback
+  const rollbackAll = () => {
+    intervalInput.value = oldSettings.timeInterval;
+    tempInput.value = oldSettings.tempThreshold;
+    humiInput.value = oldSettings.humiThreshold;
+    so2Input.value = oldSettings.so2Threshold;
+    pm10Input.value = oldSettings.pm10Threshold;
+    pm25Input.value = oldSettings.pm25Threshold;
+  };
+  sendControlCommand("timeInterval", newInterval, rollbackAll, intervalInput);
+  sendControlCommand("tempThreshold", newTempThreshold, rollbackAll, tempInput);
+  sendControlCommand("humiThreshold", newHumiThreshold, rollbackAll, humiInput);
+  sendControlCommand("so2Threshold", newSO2Threshold, rollbackAll, so2Input);
+  sendControlCommand("pm10Threshold", newPM10Threshold, rollbackAll, pm10Input);
+  sendControlCommand("pm25Threshold", newPM25Threshold, rollbackAll, pm25Input);
 }
 
 // --- LED TOGGLE LOGIC (Instant Send on Change) ---
@@ -225,19 +250,22 @@ function initializeControlEvents() {
     ledToggle.addEventListener("change", updateLedState);
   }
 
-  // C. Attach listener ONLY for Interval Time (updateSettings function)
+  // C. Attach listener for Interval Time (updateSettings function) and Threshold
   const updateButton = document.getElementById("update-settings-btn");
-  if (updateButton) {
-    updateButton.addEventListener("click", updateIntervalSettings);
-  }
-
-  // D. Sidebar Toggle
-  const toggleButton = document.getElementById("menu-toggle");
-  const wrapper = document.getElementById("wrapper");
-  if (toggleButton && wrapper) {
-    toggleButton.onclick = function () {
-      wrapper.classList.toggle("toggled");
-    };
+  const tempInput = document.getElementById("temp-threshold-input");
+  const humiInput = document.getElementById("humi-threshold-input");
+  const so2Input = document.getElementById("so2-threshold-input");
+  const pm10Input = document.getElementById("pm10-threshold-input");
+  const pm25Input = document.getElementById("pm25-threshold-input");
+  if (
+    updateButton ||
+    tempInput ||
+    humiInput ||
+    so2Input ||
+    pm10Input ||
+    pm25Input
+  ) {
+    updateButton.addEventListener("click", update_verification);
   }
 }
 

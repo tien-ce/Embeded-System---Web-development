@@ -79,6 +79,9 @@ function updateDisplay(elementId, value, unit) {
  */
 async function fetchLatestSensorData() {
   console.log("Fetching data from client-side");
+  const controller = new AbortController();
+  window.activeFetchController = controller;
+  const signal = controller.signal;
   try {
     const userAccessToken = localStorage.getItem("userAccessToken");
     if (!userAccessToken) {
@@ -90,10 +93,24 @@ async function fetchLatestSensorData() {
       headers: {
         Authorization: `Bearer ${userAccessToken}`,
       },
+      signal: signal,
     });
 
     if (!response.ok) {
-      throw new Error(`Proxy Request Failed: ${response.status}`);
+      const errorDetails = await response
+        .json()
+        .catch(() => ({ message: "No JSON body available" }));
+      console.error(
+        ">>> AUTH/API ERROR RESPONSE:",
+        response.status,
+        errorDetails
+      );
+
+      throw new Error(
+        `Proxy Request Failed: ${response.status} - ${
+          errorDetails.message || errorDetails.error || "Server error"
+        }`
+      );
     }
     const data = await response.json();
     console.log(">>> Receiving from client-side", data);
@@ -112,7 +129,7 @@ async function fetchLatestSensorData() {
     updateChartData(data);
 
     // ---3. Update Polling Time ---
-    POLLING_INTERVAL = data.itervalTime;
+    POLLING_INTERVAL = data.intervalTime;
   } catch (error) {
     console.error(`Error during API fetch data: ${error.message}`);
     updateDisplay("temp-display", "NaN", "");
@@ -120,6 +137,8 @@ async function fetchLatestSensorData() {
     const statusElement = document.getElementById("status-display");
     statusElement.innerText = "COMM ERROR";
     statusElement.style.color = "#dc3545"; // Red color for communication error
+  } finally {
+    window.activeFetchController = null;
   }
 }
 
@@ -128,8 +147,14 @@ async function fetchLatestSensorData() {
  */
 function startPolling() {
   initializeChart(); // Initialize both charts
+  window.globalSensorPollingTimerId = setInterval(
+    fetchLatestSensorData,
+    POLLING_INTERVAL
+  );
+  console.log(
+    `[POLLING] Sensor Polling started with ID: ${window.globalSensorPollingTimerId}`
+  );
   fetchLatestSensorData();
-  setInterval(fetchLatestSensorData, POLLING_INTERVAL);
 }
 
 // Ensure the script execution starts only after the entire HTML document is loaded

@@ -13,6 +13,10 @@ const getTempDashboard = (req, res) => {
   res.render("../views/temp_humi_dashboard.ejs");
 };
 
+const getAlert = (req, res) => {
+  res.render("../views/alert.ejs");
+};
+
 const getAirDashboard = (req, res) => {
   res.render("../views/air_quality_dashboard.ejs");
 };
@@ -32,5 +36,6 @@ module.exports = {
   getTempDashboard,
   getAirDashboard,
   getSettings,
+  getAlert,
   getLogin,
 };

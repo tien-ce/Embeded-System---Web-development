@@ -54,6 +54,81 @@ const pruneOldTelemetry = async (userId) => {
 };
 
 /**
+ * Saves a new alert log entry to the AlertsLog table.
+ * @param {number} userId - The ID of the user.
+ * @param {string} type - The alert type (e.g., 'temp', 'pm25').
+ * @param {string} message - The detailed alert message.
+ */
+/**
+ * Saves a new alert log entry to the AlertsLog table.
+ * If an UNREAD alert of the same type and user exists, it updates the old one (UPSERT logic).
+ * * @param {number} userId - The ID of the user.
+ * @param {string} type - The alert type (e.g., 'temp', 'pm25').
+ * @param {string} message - The detailed alert message.
+ */
+const saveNewAlert = async (userId, type, message) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const currentTime = Math.floor(Date.now() / 1000);
+
+    // --- BƯỚC 1: KIỂM TRA LOG CHƯA ĐỌC CÙNG LOẠI ---
+    const selectQuery = `
+      SELECT log_id 
+      FROM AlertsLog 
+      WHERE user_id = ? AND type = ? AND is_read = FALSE 
+      LIMIT 1;
+    `;
+    const [existingAlerts] = await connection.execute(selectQuery, [
+      userId,
+      type,
+    ]);
+
+    if (existingAlerts.length > 0) {
+      const existingLogId = existingAlerts[0].log_id;
+
+      const updateQuery = `
+        UPDATE AlertsLog 
+        SET message = ?, time_stamp = ?, is_read = FALSE 
+        WHERE log_id = ?;
+      `;
+      // We update the message, reset is_read to FALSE, and update the timestamp
+      await connection.execute(updateQuery, [
+        message,
+        currentTime,
+        existingLogId,
+      ]);
+
+      console.log(
+        `[DB ALERT] Updated existing UNREAD alert ${existingLogId} for User ${userId}: ${type}`
+      );
+    } else {
+      const insertQuery = `
+        INSERT INTO AlertsLog (user_id, type, message, is_read, time_stamp)
+        VALUES (?, ?, ?, FALSE, ?);
+      `;
+
+      await connection.execute(insertQuery, [
+        userId,
+        type,
+        message,
+        currentTime,
+      ]);
+
+      console.log(`[DB ALERT] Created NEW alert for User ${userId}: ${type}`);
+    }
+  } catch (error) {
+    console.error(
+      `[DB ERROR] Failed to save/update alert for User ${userId}:`,
+      error
+    );
+    throw error;
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+/**
  * Updates the global state with new sensor values received from the MQTT client.
  * @param {object} newData - The data received from the MQTT client (e.g., {temperature: 30.5}).
  */
@@ -79,9 +154,9 @@ const updateData = async (newData, userId) => {
       currentTime,
       newData.temperature || null,
       newData.humidity || null,
-      newData.SO2 || null,
-      newData.PM10 || null,
-      newData.PM25 || null,
+      newData.no2 || null,
+      newData.pm10 || null,
+      newData.pm25 || null,
     ];
 
     // 5. Execute the query
@@ -223,9 +298,153 @@ const checkSignIn = async (email, password) => {
     }
   }
 };
+const getThresholds = async (userId) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    // NOTE: We select all control fields, assuming they include thresholds.
+    const [rows] = await connection.query(
+      "SELECT * FROM DeviceControl WHERE user_id = ?",
+      [userId]
+    );
+    return rows.length > 0 ? rows[0] : null;
+  } catch (error) {
+    console.error(
+      `[DB ERROR] Failed to fetch thresholds for User ${userId}:`,
+      error
+    );
+    throw error;
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+/**
+ * Retrieves the count of unread alerts for a specific user.
+ * @param {number} userId - The ID of the user.
+ * @returns {Promise<number>} The count of unread alerts.
+ */
+const getUnreadAlertCount = async (userId) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+
+    // Query: COUNT alerts where user_id matches and is_read is FALSE
+    const countQuery = `
+            SELECT COUNT(*) AS unreadCount 
+            FROM AlertsLog 
+            WHERE user_id = ? AND is_read = FALSE;
+        `;
+
+    const [rows] = await connection.execute(countQuery, [userId]);
+
+    // Return the count, defaulting to 0 if the query fails/returns nothing
+    return rows[0].unreadCount || 0;
+  } catch (error) {
+    console.error(
+      `[DB ERROR] Failed to get unread alert count for User ${userId}:`,
+      error
+    );
+    // Throwing the error is safer for API controllers
+    throw error;
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+/**
+ * Retrieves all alerts (read and unread) for display on the log page.
+ * NOTE: The frontend will handle filtering/styling based on the 'is_read' flag.
+ * @param {number} userId - The ID of the user.
+ * @returns {Promise<Array<object>>} A list of recent alerts.
+ */
+const getAllAlerts = async (userId) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+
+    // Query: Select all alerts, ordered by timestamp (newest first).
+    // NOTE: If the table gets very large, consider adding a LIMIT here.
+    const selectQuery = `
+            SELECT log_id, type, message, is_read, time_stamp 
+            FROM AlertsLog 
+            WHERE user_id = ?
+            ORDER BY time_stamp DESC;
+        `;
+
+    const [rows] = await connection.execute(selectQuery, [userId]);
+
+    return rows;
+  } catch (error) {
+    console.error(
+      `[DB ERROR] Failed to fetch alerts log for User ${userId}:`,
+      error
+    );
+    throw error;
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+/**
+ * Marks all alerts for a user as read and prunes (deletes) old read alerts,
+ * keeping only the 10 most recent read alerts plus any unread alerts.
+ * @param {number} userId - The ID of the user.
+ */
+const markAllAsReadAndPrune = async (userId) => {
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction(); // Start a transaction for safety
+
+    // 1. UPDATE: Mark ALL existing alerts for the user as READ (is_read = TRUE)
+    const updateQuery = `
+            UPDATE AlertsLog 
+            SET is_read = TRUE 
+            WHERE user_id = ? AND is_read = FALSE;
+        `;
+    await connection.execute(updateQuery, [userId]);
+
+    // 2. DELETE (Pruning): Delete read alerts, keeping only the 10 newest ones.
+    const pruneQuery = `
+            DELETE FROM AlertsLog
+            WHERE user_id = ? AND is_read = TRUE 
+                AND log_id NOT IN (
+                    SELECT log_id FROM (
+                        SELECT log_id
+                        FROM AlertsLog
+                        WHERE user_id = ? AND is_read = TRUE
+                        ORDER BY time_stamp DESC
+                        LIMIT 10 
+                    ) AS T_alias 
+                );
+        `;
+    const [result] = await connection.execute(pruneQuery, [userId, userId]);
+
+    console.log(
+      `[DB PRUNE] User ${userId}: Marked all as read. Deleted ${result.affectedRows} old alerts.`
+    );
+
+    await connection.commit(); // Commit the transaction
+  } catch (error) {
+    await connection.rollback(); // Rollback if any part failed
+    console.error(
+      `[DB ERROR] Transaction failed during mark read/pruning for User ${userId}:`,
+      error
+    );
+    throw error;
+  } finally {
+    if (connection) connection.release();
+  }
+};
 
 module.exports = {
   updateData,
   getLatestData,
   checkSignIn,
+  getThresholds,
+  getUnreadAlertCount,
+  getAllAlerts,
+  markAllAsReadAndPrune,
+  saveNewAlert,
 };

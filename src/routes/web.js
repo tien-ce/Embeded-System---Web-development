@@ -5,8 +5,9 @@ const {
   getAbc,
   getDatas,
   getTempDashboard,
-  getSettings,
   getAirDashboard,
+  getSettings,
+  getAlert,
   getLogin,
 } = require("../controllers/home_controller");
 const router = express.Router();
@@ -14,10 +15,11 @@ const router = express.Router();
 // route.method("/route",hadnle)
 
 router.get("/", getHomepage);
-router.get("/abc", getAbc);
-router.get("/data", getDatas);
+// router.get("/abc", getAbc);
+// router.get("/data", getDatas);
 router.get("/temp", getTempDashboard);
 router.get("/air", getAirDashboard);
 router.get("/settings", getSettings);
+router.get("/alerts", getAlert);
 router.get("/login", getLogin);
 module.exports = router; // Export default
