@@ -74,15 +74,7 @@ const setControlDevice = async (req, res) => {
   // 1. Validiation
   const attributeKey = data.attributeKey;
   const value = data.value;
-
-  console.log(
-    ">>> Test fetch device control: AttributeKey",
-    attributeKey,
-    "Value",
-    value,
-    "AccessToken",
-    userAccessToken
-  );
+  const userId = req.userId;
 
   if (!attributeKey || value === undefined || attributeKey === undefined) {
     console.error("CONTROL ERROR: Missing key or value");
@@ -93,6 +85,7 @@ const setControlDevice = async (req, res) => {
     // 2. Dispatch to Service
     const success = await updateControlDevice(
       userAccessToken,
+      userId,
       attributeKey,
       value
     );
@@ -132,10 +125,82 @@ const signIn = async (req, res) => {
   return res.status(500).json({ error: signInRes.message });
 };
 
+/**
+ * Handles GET request to retrieve the count of unread alerts for the authenticated user.
+ * (MAPPED TO: /api/alerts/count)
+ */
+const unReadAlertCount = async (req, res) => {
+  // Middleware (tokenToId) must run before this function to set req.userId
+  const userId = req.userId;
+
+  try {
+    // Call the stateStore function to get the count
+    const unreadCount = await stateStore.getUnreadAlertCount(userId);
+
+    // Return the count in JSON format for the frontend badge update
+    return res.json({ unreadCount: unreadCount });
+  } catch (error) {
+    console.error(
+      `[API] Error fetching unread count for User ${userId}:`,
+      error
+    );
+    return res.status(500).json({ error: "Failed to retrieve alert count." });
+  }
+};
+
+/**
+ * Handles GET request to retrieve the recent alerts log for the authenticated user.
+ * (MAPPED TO: /api/alerts/logs)
+ */
+const getAlertsLog = async (req, res) => {
+  // Middleware (tokenToId) must run before this function
+  const userId = req.userId;
+
+  try {
+    // Call the stateStore function to get the list of alerts
+    const alertsLog = await stateStore.getAllAlerts(userId);
+
+    // Return the log array
+    return res.json({ logs: alertsLog });
+  } catch (error) {
+    console.error(`[API] Error fetching alerts log for User ${userId}:`, error);
+    return res.status(500).json({ error: "Failed to retrieve alert logs." });
+  }
+};
+
+/**
+ * Handles POST request to mark all alerts as read and prune old logs.
+ * (MAPPED TO: /api/alerts/mark-read)
+ */
+const markAlertsAsRead = async (req, res) => {
+  // Middleware (tokenToId) must run before this function
+  const userId = req.userId;
+
+  try {
+    // Call the stateStore function to update DB status and prune logs
+    await stateStore.markAllAsReadAndPrune(userId);
+
+    // Return success response
+    return res.json({
+      success: true,
+      message: "Alerts marked as read and pruned.",
+    });
+  } catch (error) {
+    console.error(
+      `[API] Error marking alerts as read for User ${userId}:`,
+      error
+    );
+    return res.status(500).json({ error: "Failed to mark alerts as read." });
+  }
+};
+
 module.exports = {
   // We assume this function is mapped to an API route (e.g., /api/latest)
   getSensor1Data,
   getControlDevice,
   setControlDevice,
   signIn,
+  unReadAlertCount,
+  getAlertsLog,
+  markAlertsAsRead,
 };

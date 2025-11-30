@@ -76,6 +76,9 @@ function updateDisplay(elementId, value, unit) {
  */
 async function fetchLatestAirData() {
   console.log("Fetching air data from client-side");
+  const controller = new AbortController();
+  window.activeFetchController = controller;
+  const signal = controller.signal;
   try {
     const userAccessToken = localStorage.getItem("userAccessToken");
     if (!userAccessToken) {
@@ -87,6 +90,7 @@ async function fetchLatestAirData() {
       headers: {
         Authorization: `Bearer ${userAccessToken}`,
       },
+      signal: signal,
     });
 
     if (!response.ok) {
@@ -109,7 +113,7 @@ async function fetchLatestAirData() {
     // --- 2. Update Charts ---
     updateAirChartData(data);
     // --- 3. Update time polling
-    POLLING_INTERVAL = data.itervalTime;
+    POLLING_INTERVAL = data.intervalTime;
   } catch (error) {
     console.error(`Error during Air API fetch: ${error.message}`);
     updateDisplay("co2-display", "NaN", "");
@@ -125,6 +129,8 @@ async function fetchLatestAirData() {
       statusElement.innerText = "COMM ERROR";
       statusElement.style.color = "#dc3545";
     }
+  } finally {
+    window.activeFetchController = null;
   }
 }
 /**
@@ -132,8 +138,14 @@ async function fetchLatestAirData() {
  */
 function startAirPolling() {
   initializeAirChart(); // Initialize both charts
+  window.globalSensorPollingTimerId = setInterval(
+    fetchLatestAirData,
+    POLLING_INTERVAL
+  );
+  console.log(
+    `[POLLING] Sensor Polling started with ID: ${window.globalSensorPollingTimerId}`
+  );
   fetchLatestAirData();
-  setInterval(fetchLatestAirData, POLLING_INTERVAL);
 }
 
 // Ensure the script execution starts only after the entire HTML document is loaded
