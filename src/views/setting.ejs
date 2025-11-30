@@ -1,88 +1,242 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>IoT Control Center | Settings</title>
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/dashboard.css">
-</head>
-<body>
 
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/css/dashboard.css" />
+  </head>
+  <body>
     <div class="d-flex" id="wrapper">
-        <div class="bg-dark border-end border-secondary" id="sidebar-wrapper">
-            <div class="sidebar-heading text-center py-4 primary-text fs-4 fw-bold text-uppercase border-bottom border-secondary">
-                <i class="fas fa-microchip me-2"></i>IoT System
-            </div>
-            <div class="list-group list-group-flush my-3">
-                <a href="/temp" class="list-group-item list-group-item-action bg-transparent second-text">
-                    <i class="fas fa-tachometer-alt me-2"></i>Temperature Dashboard
-                </a>
-                <a href="/air" class="list-group-item list-group-item-action bg-transparent second-text ">
-                    <i class="fas fa-cloud-sun me-2"></i>Air Dashboard
-                </a>            
-                <a href="/settings" class="list-group-item list-group-item-action bg-transparent second-text active"> 
-                    <i class="fas fa-cog me-2"></i>Settings
-                </a>
-                <a href="/" class="list-group-item list-group-item-action bg-transparent second-text">
-                    <i class="fas fa-chart-line me-2"></i>Linus_angry
-                </a>
-                <a href="#" class="list-group-item list-group-item-action bg-transparent text-danger fw-bold">
-                    <i class="fas fa-power-off me-2"></i>Logout
-                </a>
-            </div>
+      <div class="bg-dark border-end border-secondary" id="sidebar-wrapper">
+        <div
+          class="sidebar-heading text-center py-4 primary-text fs-4 fw-bold text-uppercase border-bottom border-secondary"
+        >
+          <i class="fas fa-microchip me-2"></i>IoT System
         </div>
-        <div id="page-content-wrapper">
-            <nav class="navbar navbar-expand-lg navbar-dark bg-transparent py-4 px-4">
-                <div class="d-flex align-items-center">
-                    <i class="fas fa-align-left primary-text fs-4 me-3" id="menu-toggle"></i> <h2 class="fs-2 m-0 text-white">Device Settings & Control</h2>
-                </div>
-            </nav>
-
-            <div class="container-fluid px-4">
-                <div class="row my-5">
-                    
-                    <!-- Control Panel Column -->
-                    <div class="col-lg-6 offset-lg-3">
-                        <div class="p-4 bg-dark-card rounded shadow-sm custom-card">
-                            <h4 class="text-white mb-4">Device Control & Configuration</h4>
-                            
-                            <!-- Control 1: LED Toggle -->
-                            <div class="mb-4 p-3 border border-secondary rounded">
-                                <label class="text-secondary mb-2 d-block fs-5">Living Room Light (LED State)</label>
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="led-toggle"> <!-- JS LOGIC: Control Input for LED -->
-                                    <label class="form-check-label text-white fs-5" for="led-toggle">OFF</label>
-                                </div>
-                            </div>
-                            
-                            <!-- Control 2: Fan Speed Slider -->
-                            <div class="mb-4 p-3 border border-secondary rounded">
-                                <label for="fan-speed-input" class="text-secondary mb-2 d-block fs-5">Fan Speed (0 - 100%)</label>
-                                <input type="range" class="form-range" min="0" max="100" value="0" id="fan-speed-input"> <!-- JS LOGIC: Control Input for Fan Speed -->
-                                <span class="text-white" id="fan-speed-value">0%</span>
-                            </div>
-                            
-                            <!-- Control 3: Data Interval Time (Input cho interval time) -->
-                            <div class="mb-4 p-3 border border-secondary rounded">
-                                <label for="interval-time-input" class="text-secondary mb-2 d-block fs-5">Data Send Interval (Seconds)</label>
-                                <input type="number" class="form-control bg-dark text-white border-secondary" min="1" max="60" value="10" id="interval-time-input" placeholder="e.g., 10">
-                                <small class="text-muted">How often the ESP32 should publish telemetry data.</small>
-                            </div>
-
-                            <button class="btn btn-primary w-100 mt-3" id="update-settings-btn">Save Configuration</button> <!-- JS LOGIC: Button to trigger Control API call -->
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="list-group list-group-flush my-3">
+          <a
+            href="#"
+            class="list-group-item list-group-item-action bg-transparent second-text nav-link-cleanup"
+            data-target="/temp"
+          >
+            <i class="fas fa-tachometer-alt me-2"></i>Temperature Dashboard
+          </a>
+          <a
+            href="#"
+            class="list-group-item list-group-item-action bg-transparent second-text nav-link-cleanup"
+            data-target="/air"
+          >
+            <i class="fas fa-cloud-sun me-2"></i>Air Dashboard
+          </a>
+          <a
+            href="#"
+            class="list-group-item list-group-item-action bg-transparent second-text nav-link-cleanup active"
+            data-target="/settings"
+          >
+            <i class="fas fa-cog me-2"></i>Settings
+          </a>
+          <a
+            href="#"
+            class="list-group-item list-group-item-action bg-transparent second-text nav-link-cleanup"
+            data-target="/"
+          >
+            <i class="fas fa-chart-line me-2"></i>Linus_angry
+          </a>
+          <a
+            href="#"
+            class="list-group-item list-group-item-action bg-transparent second-text nav-link-cleanup"
+            data-target="/alerts"
+            id="alerts-menu-link"
+          >
+            <i class="fas fa-bell me-2"></i>Alerts
+            <span
+              id="alert-count-badge"
+              class="badge rounded-pill bg-danger float-end"
+            >
+              1
+            </span>
+          </a>
+          <a
+            href="/login"
+            class="list-group-item list-group-item-action bg-transparent text-danger fw-bold"
+          >
+            <i class="fas fa-power-off me-2"></i>Logout
+          </a>
         </div>
+      </div>
+      <div id="page-content-wrapper">
+        <nav
+          class="navbar navbar-expand-lg navbar-dark bg-transparent py-4 px-4"
+        >
+          <div class="d-flex align-items-center">
+            <i
+              class="fas fa-align-left primary-text fs-4 me-3"
+              id="menu-toggle"
+            ></i>
+            <h2 class="fs-2 m-0 text-white">Device Settings & Control</h2>
+          </div>
+        </nav>
+
+        <div class="container-fluid px-4">
+          <div class="row my-5">
+            <div class="col-lg-6 offset-lg-3">
+              <div class="p-4 bg-dark-card rounded shadow-sm custom-card">
+                <h4 class="text-white mb-4">Device Control & Configuration</h4>
+
+                <div class="mb-4 p-3 border border-secondary rounded">
+                  <label class="text-secondary mb-2 d-block fs-5"
+                    >Living Room Light (LED State)</label
+                  >
+                  <div class="form-check form-switch">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="led-toggle"
+                    />
+                    <label
+                      class="form-check-label text-white fs-5"
+                      for="led-toggle"
+                      >OFF</label
+                    >
+                  </div>
+                </div>
+
+                <div class="mb-4 p-3 border border-secondary rounded">
+                  <label
+                    for="fan-speed-input"
+                    class="text-secondary mb-2 d-block fs-5"
+                    >Fan Speed (0 - 100%)</label
+                  >
+                  <input
+                    type="range"
+                    class="form-range"
+                    min="0"
+                    max="100"
+                    value="0"
+                    id="fan-speed-input"
+                  />
+                  <span class="text-white" id="fan-speed-value">0%</span>
+                </div>
+
+                <div class="mb-4 p-3 border border-secondary rounded">
+                  <label
+                    for="interval-time-input"
+                    class="text-secondary mb-2 d-block fs-5"
+                    >Data Send Interval (Seconds)</label
+                  >
+                  <input
+                    type="number"
+                    class="form-control bg-dark text-white border-secondary"
+                    min="1"
+                    max="60"
+                    value="10"
+                    id="interval-time-input"
+                    placeholder="e.g., 10"
+                  />
+                  <small class="text-muted"
+                    >How often the ESP32 should publish telemetry data.</small
+                  >
+                </div>
+
+                <div class="mb-4 p-3 border border-secondary rounded">
+                  <h5 class="text-white mb-3">Alert Thresholds (Triggers)</h5>
+
+                  <div class="mb-3">
+                    <label
+                      for="temp-threshold-input"
+                      class="text-secondary mb-1"
+                      >Temperature Threshold (ºC)</label
+                    >
+                    <input
+                      type="number"
+                      class="form-control bg-dark text-white border-secondary"
+                      value="35"
+                      id="temp-threshold-input"
+                      placeholder="e.g., 35"
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label
+                      for="humi-threshold-input"
+                      class="text-secondary mb-1"
+                      >Humidity Threshold (%)</label
+                    >
+                    <input
+                      type="number"
+                      class="form-control bg-dark text-white border-secondary"
+                      value="10"
+                      id="humi-threshold-input"
+                      placeholder="e.g., 35"
+                    />
+                  </div>
+                  <div class="mb-3">
+                    <label for="so2-threshold-input" class="text-secondary mb-1"
+                      >NO₂ Threshold (µg/m³)</label
+                    >
+                    <input
+                      type="number"
+                      class="form-control bg-dark text-white border-secondary"
+                      value="20"
+                      id="so2-threshold-input"
+                      placeholder="e.g., 20"
+                    />
+                  </div>
+
+                  <div class="mb-3">
+                    <label
+                      for="pm10-threshold-input"
+                      class="text-secondary mb-1"
+                      >PM₁₀ Threshold (µg/m³)</label
+                    >
+                    <input
+                      type="number"
+                      class="form-control bg-dark text-white border-secondary"
+                      value="50"
+                      id="pm10-threshold-input"
+                      placeholder="e.g., 50"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      for="pm25-threshold-input"
+                      class="text-secondary mb-1"
+                      >PM₂.₅ Threshold (µg/m³)</label
+                    >
+                    <input
+                      type="number"
+                      class="form-control bg-dark text-white border-secondary"
+                      value="25"
+                      id="pm25-threshold-input"
+                      placeholder="e.g., 25"
+                    />
+                  </div>
+                </div>
+                <button
+                  class="btn btn-primary w-100 mt-3"
+                  id="update-settings-btn"
+                >
+                  Save Configuration
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- SCRIPT REFERENCES -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/dash_board_ui.js"></script> 
-
-</body>
+    <script src="/js/dash_board_ui.js"></script>
+    <script src="js/alert_count.js"></script>
+  </body>
 </html>
