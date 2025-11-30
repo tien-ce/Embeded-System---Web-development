@@ -8,11 +8,20 @@ const {
   getControlDevice,
   setControlDevice,
   signIn,
+  unReadAlertCount,
+  getAlertsLog,
+  markAlertsAsRead,
 } = require("../controllers/api_controller");
 
 // Client will call this URL: /api/sensors/data
 router.get("/sensors/data", tokenToId, getSensor1Data);
+
 router.get("/device/getControl", tokenToId, getControlDevice);
 router.post("/device/setControl", tokenToId, setControlDevice);
+
 router.post("/signin", signIn);
+
+router.get("/alerts/getUnReadAlertCount", tokenToId, unReadAlertCount);
+router.get("/alerts/getAllAlert", tokenToId, getAlertsLog);
+router.post("/alerts/markAlertsAsRead", tokenToId, markAlertsAsRead);
 module.exports = router;
